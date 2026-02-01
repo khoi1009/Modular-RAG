@@ -1,0 +1,262 @@
+%% Cognita RAG Framework Architecture
+%% Generated: 2026-01-31 | Phase 1 - Deep Code Inspection
+
+%% Main Architecture Diagram
+graph TB
+    subgraph "External Services"
+        Ollama[Ollama LLM]
+        OpenAI[OpenAI API]
+        Infinity[Infinity Server]
+        Whisper[faster-whisper]
+        UnstructuredIO[UnstructuredIO]
+        Brave[Brave Search]
+    end
+
+    subgraph "Storage Layer"
+        Qdrant[(Qdrant VectorDB)]
+        Postgres[(PostgreSQL)]
+    end
+
+    subgraph "API Layer"
+        FastAPI[FastAPI Server]
+        BasicRAG[BasicRAGController]
+        MultiModal[MultiModalController]
+    end
+
+    subgraph "Core Modules"
+        subgraph "Model Gateway"
+            MGW[ModelGateway Singleton]
+            EmbCache[Embedder Cache]
+            LLMCache[LLM Cache]
+            RerankCache[Reranker Cache]
+        end
+
+        subgraph "Data Processing"
+            DL[DataLoaders]
+            Parsers[Parsers]
+            Chunkers[Chunking]
+        end
+
+        subgraph "Retrieval"
+            VDB[VectorDB Interface]
+            Retrievers[Retriever Factory]
+            Reranker[Reranker Service]
+        end
+
+        subgraph "Metadata"
+            MS[MetadataStore]
+            Collections[Collections]
+            DataSources[DataSources]
+            Runs[IngestionRuns]
+        end
+    end
+
+    subgraph "LCEL Chains"
+        Chain[RAG Chain]
+        Prompt[PromptTemplate]
+        Parser2[OutputParser]
+    end
+
+    %% Connections
+    FastAPI --> BasicRAG
+    FastAPI --> MultiModal
+    BasicRAG --> MGW
+    MultiModal --> MGW
+    BasicRAG --> VDB
+    MultiModal --> VDB
+    BasicRAG --> Chain
+    MultiModal --> Chain
+
+    MGW --> EmbCache
+    MGW --> LLMCache
+    MGW --> RerankCache
+    MGW --> Ollama
+    MGW --> OpenAI
+    MGW --> Infinity
+
+    VDB --> Qdrant
+    MS --> Postgres
+
+    DL --> Parsers
+    Parsers --> Chunkers
+    Parsers --> UnstructuredIO
+    Parsers --> Whisper
+
+    Retrievers --> VDB
+    Retrievers --> Reranker
+    Reranker --> Infinity
+
+    Chain --> Prompt
+    Chain --> Parser2
+
+    Collections --> MS
+    DataSources --> MS
+    Runs --> MS
+
+%% Data Flow Diagram
+graph LR
+    subgraph "Ingestion Flow"
+        DS[Data Source] --> DL2[DataLoader]
+        DL2 --> P2[Parser]
+        P2 --> C2[Chunker]
+        C2 --> E2[Embedder]
+        E2 --> V2[VectorDB]
+    end
+
+    subgraph "Query Flow"
+        Q[User Query] --> QC[QueryController]
+        QC --> R[Retriever]
+        R --> RR[Reranker]
+        RR --> LLM2[LLM]
+        LLM2 --> Resp[Response]
+    end
+
+%% Component Registry Pattern
+graph TB
+    subgraph "Registry Pattern"
+        subgraph "DataLoader Registry"
+            LR[LOADER_REGISTRY]
+            Local[LocalDirLoader]
+            Web[WebLoader]
+            TF[TrueFoundryLoader]
+            LR --> Local
+            LR --> Web
+            LR --> TF
+        end
+
+        subgraph "Parser Registry"
+            PR[PARSER_REGISTRY]
+            Unst[UnstructuredIO]
+            MM[MultiModal]
+            Audio[Audio]
+            Video[Video]
+            PR --> Unst
+            PR --> MM
+            PR --> Audio
+            PR --> Video
+        end
+
+        subgraph "VectorDB Registry"
+            VR[SUPPORTED_VECTOR_DBS]
+            QD[Qdrant]
+            VR --> QD
+        end
+
+        subgraph "QueryController Registry"
+            QCR[QUERY_CONTROLLER_REGISTRY]
+            BR[basic-rag]
+            MMC[multimodal]
+            QCR --> BR
+            QCR --> MMC
+        end
+    end
+
+%% Class Diagram
+classDiagram
+    class BaseDataLoader {
+        <<abstract>>
+        +load_full_data()
+        +load_incremental_data()
+        +load_filtered_data()*
+    }
+
+    class BaseParser {
+        <<abstract>>
+        +supported_file_extensions: List
+        +get_chunks()*
+    }
+
+    class BaseVectorDB {
+        <<abstract>>
+        +create_collection()
+        +upsert_documents()
+        +get_vector_store()
+        +delete_collection()
+        +list_data_point_vectors()
+        +delete_data_point_vectors()
+    }
+
+    class BaseQueryController {
+        +_get_vector_store()
+        +_get_retriever()
+        +_get_llm()
+        +_stream_answer()
+        +_format_docs()
+    }
+
+    class ModelGateway {
+        -_embedder_cache
+        -_llm_cache
+        -_reranker_cache
+        +get_embedder_from_model_config()
+        +get_llm_from_model_config()
+        +get_reranker_from_model_config()
+    }
+
+    class BaseMetadataStore {
+        <<abstract>>
+        +aget_collection_by_name()
+        +acreate_collection()
+        +aget_data_source_from_fqn()
+        +acreate_data_ingestion_run()
+    }
+
+    LocalDirLoader --|> BaseDataLoader
+    WebLoader --|> BaseDataLoader
+    UnstructuredIoParser --|> BaseParser
+    MultiModalParser --|> BaseParser
+    QdrantVectorDB --|> BaseVectorDB
+    BasicRAGQueryController --|> BaseQueryController
+    MultiModalRAGQueryController --|> BaseQueryController
+    PrismaMetadataStore --|> BaseMetadataStore
+
+%% Sequence Diagram - Query Flow
+sequenceDiagram
+    participant User
+    participant API as FastAPI
+    participant QC as QueryController
+    participant MGW as ModelGateway
+    participant VDB as VectorDB
+    participant LLM
+
+    User->>API: POST /basic-rag/answer
+    API->>QC: answer(request)
+    QC->>MGW: get_embedder()
+    MGW-->>QC: embeddings
+    QC->>VDB: get_vector_store()
+    VDB-->>QC: vector_store
+    QC->>QC: build_retriever()
+    QC->>MGW: get_llm()
+    MGW-->>LLM: create ChatOpenAI
+    LLM-->>MGW: llm instance
+    MGW-->>QC: llm
+    QC->>QC: build LCEL chain
+    QC->>VDB: retrieve(query)
+    VDB-->>QC: documents
+    QC->>LLM: generate(prompt + docs)
+    LLM-->>QC: answer stream
+    QC-->>API: StreamingResponse
+    API-->>User: SSE events
+
+%% Sequence Diagram - Ingestion Flow
+sequenceDiagram
+    participant Job as Indexer Job
+    participant MS as MetadataStore
+    participant DL as DataLoader
+    participant Parser
+    participant MGW as ModelGateway
+    participant VDB as VectorDB
+
+    Job->>MS: get_collection()
+    MS-->>Job: collection config
+    Job->>MS: create_ingestion_run()
+    Job->>DL: load_filtered_data()
+    loop For each batch
+        DL-->>Job: List[LoadedDataPoint]
+        Job->>Parser: get_chunks()
+        Parser-->>Job: List[Document]
+        Job->>MGW: get_embedder()
+        MGW-->>Job: embeddings
+        Job->>VDB: upsert_documents()
+    end
+    Job->>MS: update_run_status(COMPLETED)

@@ -1,0 +1,14 @@
+#### singlestore db
+singlestoredb==1.0.4
+
+### Weaviate client (in progress)
+weaviate-client==3.25.3
+
+### MongoDB
+pymongo==4.10.1
+langchain-mongodb==0.2.0
+
+
+### Milvus
+pymilvus==2.4.10
+langchain-milvus==0.1.7

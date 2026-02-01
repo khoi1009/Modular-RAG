@@ -1,0 +1,31 @@
+# Hybrid search pipeline combining vector and keyword search
+# Better for medium complexity queries
+
+name: hybrid-search
+description: Hybrid retrieval combining vector similarity and keyword matching
+
+steps:
+  # Step 1: Retrieve using hybrid search
+  - name: hybrid_retrieve
+    module: retrievers.vectorstore
+    output: documents
+    timeout_sec: 15
+
+  # Step 2: Rerank retrieved documents
+  - name: rerank_documents
+    module: rerankers.simple
+    input: documents
+    output: ranked_documents
+    condition: "query_metadata.complexity_score > 0.3"
+    timeout_sec: 10
+
+  # Step 3: Generate answer
+  - name: generate_answer
+    module: generation.lcel_chain
+    input: ranked_documents
+    output: answer
+    timeout_sec: 30
+
+default_config:
+  max_docs: 10
+  rerank_top_k: 5

@@ -1,0 +1,39 @@
+# Self-reflective retrieval pipeline
+# Includes answer verification and iterative refinement
+
+name: self-reflective
+description: Reflective pipeline with answer verification and correction
+
+steps:
+  # Step 1: Initial retrieval
+  - name: initial_retrieve
+    module: retrievers.vectorstore
+    output: initial_documents
+    timeout_sec: 10
+
+  # Step 2: Generate initial answer
+  - name: initial_answer
+    module: generation.lcel_chain
+    input: initial_documents
+    output: draft_answer
+    timeout_sec: 30
+
+  # Step 3: Verify answer quality (placeholder for Phase 5)
+  - name: verify_answer
+    module: generation.lcel_chain
+    input: draft_answer
+    output: verification_result
+    condition: "query_metadata.intent == 'verification-needed'"
+    timeout_sec: 20
+
+  # Step 4: Refine if needed (conditional on verification)
+  - name: refine_answer
+    module: generation.lcel_chain
+    output: answer
+    condition: "verification_result.needs_refinement == true"
+    timeout_sec: 30
+    retry_count: 1
+
+default_config:
+  max_docs: 8
+  verification_threshold: 0.7

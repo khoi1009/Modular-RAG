@@ -1,0 +1,68 @@
+GitPython==3.1.43
+
+## uvicorn
+uvicorn[standard]==0.23.2
+
+## fastapi
+fastapi==0.111.1
+
+## env
+python-dotenv==1.0.1
+
+## pydantic
+pydantic==2.7.4
+pydantic-settings==2.6.1
+
+## pdf
+PyMuPDF==1.23.6
+
+## html
+beautifulsoup4==4.12.3
+
+## markdown
+markdownify==0.11.6
+
+## async
+async-timeout==4.0.3
+aiofiles==24.1.0
+
+## cache
+cachetools==5.5.0
+
+## requests
+requests==2.32.2
+
+## vision
+opencv-python==4.9.0.80
+
+## pillow
+pillow==10.4.0
+
+## truefoundry
+truefoundry==0.4.1
+
+### ORM
+prisma==0.13.1
+
+### video processing
+moviepy==1.0.3
+
+## langchain
+langchain==0.3.6
+langchain-community==0.3.4
+langchain-core==0.3.15
+langchain-openai==0.2.5
+
+## vector db
+qdrant-client==1.9.0
+
+## BM25 retrieval
+rank-bm25==0.2.2
+
+## dev
+autoflake==2.3.1
+black==24.3.0
+pre-commit==3.7.0
+
+### Web Crawling
+crawl4ai==0.3.73

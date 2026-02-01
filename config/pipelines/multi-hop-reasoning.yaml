@@ -1,0 +1,51 @@
+# Multi-hop reasoning pipeline for complex queries
+# Includes query decomposition and iterative retrieval
+
+name: multi-hop-reasoning
+description: Pipeline for complex queries requiring multiple reasoning steps
+
+steps:
+  # Step 1: Analyze query complexity
+  - name: analyze_query
+    module: query_analysis.llm_analyzer
+    output: query_metadata
+    timeout_sec: 10
+
+  # Step 2: Decompose into sub-queries (conditional)
+  - name: decompose_query
+    module: query_rewriting.decomposition
+    output: sub_queries
+    condition: "query_metadata.complexity_score > 0.7"
+    timeout_sec: 15
+
+  # Step 3: Apply HyDE for better retrieval (conditional)
+  - name: hyde_rewriting
+    module: query_rewriting.hyde
+    output: hypothetical_docs
+    condition: "query_metadata.complexity_score > 0.6"
+    timeout_sec: 15
+
+  # Step 4: Retrieve documents (using original or decomposed queries)
+  - name: retrieve_documents
+    module: retrievers.vectorstore
+    output: documents
+    timeout_sec: 20
+
+  # Step 5: Multi-stage reranking
+  - name: rerank_multi_stage
+    module: rerankers.simple
+    input: documents
+    output: ranked_documents
+    timeout_sec: 15
+
+  # Step 6: Generate answer with CoT reasoning
+  - name: generate_with_reasoning
+    module: generation.lcel_chain
+    input: ranked_documents
+    output: answer
+    timeout_sec: 45
+
+default_config:
+  max_docs: 15
+  rerank_top_k: 7
+  max_iterations: 3

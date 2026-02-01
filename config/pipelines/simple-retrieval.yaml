@@ -1,0 +1,21 @@
+# Simple retrieval pipeline for straightforward queries
+# Fast vector search without preprocessing
+
+name: simple-retrieval
+description: Basic vector search pipeline for simple factual queries
+
+steps:
+  # Step 1: Retrieve documents using vector similarity
+  - name: retrieve_documents
+    module: retrievers.vectorstore
+    output: documents
+    timeout_sec: 10
+
+  # Step 2: Generate answer from retrieved documents
+  - name: generate_answer
+    module: generation.lcel_chain
+    output: answer
+    timeout_sec: 30
+
+default_config:
+  max_docs: 5

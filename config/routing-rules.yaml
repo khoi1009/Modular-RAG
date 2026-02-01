@@ -1,0 +1,128 @@
+# Routing rules for query orchestration
+# Rules are evaluated in priority order (highest first)
+
+rules:
+  # Complex multi-hop queries
+  - name: complex_multi_hop_query
+    conditions:
+      - field: complexity_score
+        operator: gt
+        value: 0.7
+      - field: complexity
+        operator: eq
+        value: multi_hop
+    action:
+      controller_name: multi-hop-reasoning
+      retrieval_strategy: hybrid
+      preprocessing_steps: [decomposition, hyde]
+      use_reranking: true
+      max_iterations: 3
+      fallback_strategy: hybrid-search
+      confidence: 0.9
+      reasoning: "High complexity multi-hop query requires decomposition and iterative retrieval"
+    priority: 100
+
+  # Comparison queries
+  - name: comparison_query
+    conditions:
+      - field: query_type
+        operator: eq
+        value: comparison
+    action:
+      controller_name: hybrid-search
+      retrieval_strategy: hybrid
+      preprocessing_steps: [decomposition]
+      use_reranking: true
+      max_iterations: 2
+      confidence: 0.85
+      reasoning: "Comparison queries benefit from hybrid search with decomposition"
+    priority: 90
+
+  # Analytical queries
+  - name: analytical_query
+    conditions:
+      - field: query_type
+        operator: eq
+        value: analytical
+      - field: complexity_score
+        operator: gt
+        value: 0.5
+    action:
+      controller_name: multi-hop-reasoning
+      retrieval_strategy: hybrid
+      preprocessing_steps: [stepback]
+      use_reranking: true
+      max_iterations: 2
+      confidence: 0.85
+      reasoning: "Analytical queries require step-back prompting for broader context"
+    priority: 85
+
+  # Medium complexity queries
+  - name: medium_complexity_query
+    conditions:
+      - field: complexity_score
+        operator: gt
+        value: 0.4
+      - field: complexity_score
+        operator: lte
+        value: 0.7
+    action:
+      controller_name: hybrid-search
+      retrieval_strategy: hybrid
+      preprocessing_steps: []
+      use_reranking: true
+      max_iterations: 1
+      confidence: 0.8
+      reasoning: "Medium complexity benefits from hybrid search with reranking"
+    priority: 50
+
+  # Temporal queries
+  - name: temporal_query
+    conditions:
+      - field: query_type
+        operator: eq
+        value: temporal
+    action:
+      controller_name: hybrid-search
+      retrieval_strategy: hybrid
+      preprocessing_steps: []
+      use_reranking: true
+      max_iterations: 1
+      confidence: 0.75
+      reasoning: "Temporal queries use hybrid search for better date matching"
+    priority: 40
+
+  # Simple factual queries
+  - name: simple_factual_query
+    conditions:
+      - field: complexity_score
+        operator: lte
+        value: 0.4
+      - field: query_type
+        operator: eq
+        value: factual
+    action:
+      controller_name: simple-retrieval
+      retrieval_strategy: vectorstore
+      preprocessing_steps: []
+      use_reranking: false
+      max_iterations: 1
+      confidence: 0.9
+      reasoning: "Simple factual queries use fast vector search without preprocessing"
+    priority: 30
+
+  # Default fallback (lowest priority)
+  - name: default_fallback
+    conditions:
+      - field: complexity_score
+        operator: gte
+        value: 0.0
+    action:
+      controller_name: simple-retrieval
+      retrieval_strategy: vectorstore
+      preprocessing_steps: []
+      use_reranking: false
+      max_iterations: 1
+      confidence: 0.6
+      reasoning: "Default fallback to simple retrieval"
+    priority: 0
