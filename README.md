@@ -13,15 +13,22 @@ You can try out Cognita at: [https://cognita.truefoundry.com](https://cognita.tr
 
 # 🎉 What's new in Cognita
 
+- [February, 2026] **Major Release: Full Modular RAG System** - Complete enhancement with 9 new modules:
+  - **Query Intelligence**: HyDE, Step-back, Query Decomposition, Multi-query rewriting
+  - **Hybrid Retrieval**: Vector + BM25 with RRF/Weighted fusion
+  - **Self-Reflective Retrieval**: CRAG with relevance grading and feedback loops
+  - **Orchestration Engine**: YAML-driven pipelines with conditional routing
+  - **Verification & QC**: Hallucination detection, source attribution, confidence scoring
+  - **Observability**: Distributed tracing, structured logging, metrics API
+  - **Evaluation Framework**: Automated evaluation, A/B testing, regression testing
+  - **Performance Optimization**: Multi-level caching, batch processing, rate limiting
+  - **Binary Quantization**: 32x memory reduction for 10M+ document enterprise scale
 - [September, 2024] Cognita now has AudioParser (https://github.com/fedirz/faster-whisper-server) and VideoParser (AudioParser + MultimodalParser).
 - [August, 2024] Cognita has now moved to using pydantic v2.
 - [July, 2024] Introducing `model gateway` a single file to manage all the models and their configurations.
-- [June, 2024] Cognita now supports it's own Metadatastore, powered by Prisma and Postgress. You can now use Cognita via UI completely without the need of `local.metadata.yaml` file. You can create collections, data sources, and index them via UI. This makes it easier to use Cognita without any code changes.
-- [June, 2024] Added one click local deployment of cognita. You can now run the entire cognita system using docker-compose. This makes it easier to test and develop locally.
-- [May, 2024] Added support for Embedding and Reranking using [Infninty Server](https://github.com/michaelfeil/infinity). You can now use hosted services for variatey embeddings and reranking services available on huggingface. This reduces the burden on the main cognita system and makes it more scalable.
-- [May, 2024] Cleaned up requirements for optional package installations for vector dbs, parsers, embedders, and rerankers.
-- [May, 2024] Conditional docker builds with arguments for optional package installations
-- [April, 2024] Support for multi-modal vision parser using GPT-4
+- [June, 2024] Cognita now supports it's own Metadatastore, powered by Prisma and Postgress.
+- [June, 2024] Added one click local deployment of cognita using docker-compose.
+- [May, 2024] Added support for Embedding and Reranking using [Infinity Server](https://github.com/michaelfeil/infinity).
 
 # Contents
 
@@ -74,10 +81,29 @@ Cognita makes it really easy to customize and experiment everything about a RAG 
 
 ### Features:
 
-1. Support for multiple document retrievers that use `Similarity Search`, `Query Decompostion`, `Document Reranking`, etc
-1. Support for SOTA OpenSource embeddings and reranking from `mixedbread-ai`
-1. Support for using LLMs using `ollama`
-1. Support for incremental indexing that ingests entire documents in batches (reduces compute burden), keeps track of already indexed documents and prevents re-indexing of those docs.
+**Core RAG:**
+1. Multiple document retrievers: `Similarity Search`, `Hybrid (Vector+BM25)`, `Self-Reflective (CRAG)`
+2. SOTA embeddings and reranking from `mixedbread-ai` via Infinity Server
+3. LLM support via `Ollama` (local) or OpenAI-compatible APIs
+4. Incremental indexing with batch processing and change detection
+
+**Query Intelligence:**
+5. Query rewriting: HyDE, Step-back, Decomposition, Multi-query expansion
+6. Query analysis: Type classification, complexity assessment, intent detection
+7. Context enhancement: Synonym expansion, temporal/spatial extraction
+
+**Advanced Retrieval:**
+8. Hybrid retrieval with RRF and Weighted fusion strategies
+9. Self-reflective retrieval with relevance grading and feedback loops
+10. Multi-stage reranking: Fast model → Powerful model cascade
+11. Binary Quantization for enterprise scale (32x memory reduction, 10M+ docs)
+
+**Production Features:**
+12. Orchestration engine with YAML-driven conditional pipelines
+13. Verification: Hallucination detection, source attribution, confidence scoring
+14. Observability: Distributed tracing, structured logging, metrics dashboard
+15. Evaluation: Automated testing, A/B experiments, regression detection
+16. Performance: Multi-level caching, batch processing, adaptive rate limiting
 
 # :rocket: Quickstart: Running Cognita Locally
 
@@ -201,6 +227,32 @@ Overall the architecture of Cognita is composed of several entities
 7. The answer and relevant document chunks are returned in response.
 
    **Note:** In case of agents the intermediate steps can also be streamed. It is up to the specific app to decide.
+
+## :computer: Code Structure:
+
+```
+backend/modules/
+├── dataloaders/          # Data source loaders (local, web, S3)
+├── parsers/              # Document parsers (PDF, Markdown, Audio, Video)
+├── vector_db/            # Vector DB integrations (Qdrant, Milvus, Weaviate)
+├── model_gateway/        # LLM and embedding model gateway
+├── query_controllers/    # RAG query endpoints
+│   ├── example/          # Basic RAG controller
+│   ├── orchestrated/     # Advanced orchestrated RAG controller
+│   └── water_infrastructure/  # Domain-specific controller
+├── query_analysis/       # Query type classification and complexity
+├── query_rewriting/      # HyDE, Step-back, Decomposition, Multi-query
+├── retrievers/
+│   ├── hybrid/           # Vector + BM25 fusion
+│   └── reflective/       # CRAG, Feedback retriever
+├── rerankers/advanced/   # Multi-stage, LLM, Diversity reranking
+├── orchestration/        # Query routing and pipeline execution
+├── verification/         # Hallucination detection, confidence scoring
+├── observability/        # Tracing, logging, metrics, alerting
+├── evaluation/           # Automated evaluation, A/B testing
+├── cache/                # Multi-level caching
+└── optimization/         # Batch processing, rate limiting
+```
 
 ## Customizing the Code for your usecase
 
@@ -420,13 +472,14 @@ Your contributions are always welcome! Feel free to contribute ideas, feedback, 
 
 Contributions are welcomed for the following upcoming developments:
 
-- Support for other vector databases like `Chroma`, `Weaviate`, etc
-- Support for `Scalar + Binary Quantization` embeddings.
-- Support for `RAG Evalutaion` of different retrievers.
-- Support for `RAG Visualization`.
-- Support for conversational chatbot with context
-- Support for RAG optimized LLMs like `stable-lm-3b`, `dragon-yi-6b`, etc
-- Support for `GraphDB`
+- ~~Support for `Scalar + Binary Quantization` embeddings~~ ✅ **Completed**
+- ~~Support for `RAG Evaluation` of different retrievers~~ ✅ **Completed**
+- Support for other vector databases like `Chroma`, `Pinecone`
+- Support for `RAG Visualization` dashboard
+- Support for conversational chatbot with context memory
+- Support for RAG optimized LLMs like `stable-lm-3b`, `dragon-yi-6b`
+- Support for `GraphDB` (Neo4j, Neptune)
+- Support for `Agentic RAG` with tool use
 
 ---
 
